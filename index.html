@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#eef1f5;--sf:#fff;--ink:#1d2433;--mut:#667085;--ln:#d9dee7;--ac:#0f766e;--acx:#fff;--dg:#b42318;--sh:#e6f4f2}
+@media (prefers-color-scheme:dark){:root{--bg:#12161f;--sf:#1b212d;--ink:#e8ecf3;--mut:#9aa4b5;--ln:#2d3646;--ac:#2dd4bf;--acx:#06201d;--dg:#f97066;--sh:#17302d}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--ln);background:var(--sf);border-radius:8px;padding:8px 12px}
+button:hover{border-color:var(--ac)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+button.pri{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
+button.dng{color:var(--dg)}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:8px 10px;width:100%}
+.num{font-variant-numeric:tabular-nums}
+header{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--sf);border-bottom:1px solid var(--ln);flex-wrap:wrap}
+header h1{font-size:17px;margin:0;margin-right:auto}
+nav{display:flex;gap:4px}
+nav button{border:0;background:none;color:var(--mut);font-weight:600}
+nav button.on{background:var(--sh);color:var(--ac)}
+main{flex:1;min-height:0;overflow:hidden}
+.view{display:none;height:100%}
+.view.on{display:block;overflow:auto;padding:14px}
+#v-sell.on{display:grid;grid-template-columns:1fr 360px;gap:14px;overflow:hidden}
+.left{display:flex;flex-direction:column;min-height:0;gap:10px}
+.cats{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.cats button{white-space:nowrap;border-radius:99px;padding:6px 14px}
+.cats button.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;overflow:auto;align-content:start;padding:2px}
+.item{text-align:left;padding:12px;display:flex;flex-direction:column;gap:4px;min-height:84px;justify-content:space-between}
+.item b{font-weight:600}
+.item small{color:var(--mut)}
+.item .pr{color:var(--ac);font-weight:700}
+.cart{background:var(--sf);border:1px solid var(--ln);border-radius:12px;display:flex;flex-direction:column;min-height:0}
+.cart h2{font-size:15px;margin:0;padding:12px 14px;border-bottom:1px solid var(--ln);display:flex;justify-content:space-between;align-items:center}
+.lines{flex:1;overflow:auto;padding:4px 14px}
+.line{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ln)}
+.line .q{display:flex;align-items:center;gap:6px}
+.line .q button{padding:2px 9px}
+.empty{color:var(--mut);text-align:center;padding:30px 10px}
+.tot{padding:12px 14px;border-top:1px solid var(--ln);display:grid;gap:6px}
+.tot div{display:flex;justify-content:space-between}
+.tot .g{font-size:22px;font-weight:700}
+.dcrow{display:grid;grid-template-columns:90px 1fr;gap:6px}
+.tbl{width:100%;border-collapse:collapse;background:var(--sf);border:1px solid var(--ln);border-radius:12px;overflow:hidden}
+.tbl th,.tbl td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--ln)}
+.tbl th{color:var(--mut);font-weight:600;font-size:13px}
+.tbl td.r,.tbl th.r{text-align:right}
+.wrap{overflow-x:auto}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:14px;align-items:end}
+label{display:grid;gap:4px;font-size:13px;color:var(--mut)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.stat{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px}
+.stat span{color:var(--mut);font-size:13px}
+.stat b{display:block;font-size:20px}
+.bar{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.bar label{min-width:160px}
+dialog{border:1px solid var(--ln);border-radius:14px;background:var(--sf);color:var(--ink);padding:18px;width:min(380px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog .big{font-size:30px;font-weight:700;text-align:center;margin:6px 0 12px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.row{display:flex;gap:8px;margin-top:12px}
+.row>*{flex:1}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;display:none;z-index:9}
+#receipt{display:none}
+@media (max-width:820px){
+#v-sell.on{grid-template-columns:1fr;grid-template-rows:1fr 46vh}
+}
+@media print{
+@page{size:80mm auto;margin:0}
+html,body{height:auto;background:#fff}
+body>*:not(#receipt){display:none!important}
+#receipt{display:block;width:72mm;margin:0 auto;padding:4mm 0;font:12px/1.35 "Courier New",monospace;color:#000;background:#fff}
+#receipt .c{text-align:center}
+#receipt .b{font-weight:700}
+#receipt .hr{border-top:1px dashed #000;margin:5px 0}
+#receipt .f{display:flex;justify-content:space-between;gap:6px}
+#receipt .t{font-size:15px;font-weight:700}
+}
+</style>
+</head>
+<body>
+<header>
+<h1 id="hName">POS</h1>
+<nav id="nav">
+<button data-v="sell" class="on">Sell</button>
+<button data-v="products">Products</button>
+<button data-v="sales">Sales</button>
+<button data-v="settings">Settings</button>
+</nav>
+<button id="reprintLast">Reprint last receipt</button>
+</header>
+<main>
+<section class="view on" id="v-sell">
+<div class="left">
+<input id="q" type="search" placeholder="Search items. Press Enter to add the first match" autocomplete="off">
+<div class="cats" id="cats"></div>
+<div class="grid" id="grid"></div>
+</div>
+<div class="cart">
+<h2>Current order <button id="clr" class="dng">Clear</button></h2>
+<div class="lines" id="lines"></div>
+<div class="tot">
+<div class="dcrow"><select id="dcT"><option value="%">Discount %</option><option value="amt">Discount amt</option></select><input id="dcV" type="number" min="0" step="any" placeholder="0"></div>
+<div><span>Subtotal</span><span class="num" id="tSub"></span></div>
+<div><span>Discount</span><span class="num" id="tDisc"></span></div>
+<div><span id="tTaxL">Tax</span><span class="num" id="tTax"></span></div>
+<div class="g"><span>Total</span><span class="num" id="tTot"></span></div>
+<button class="pri" id="charge">Charge</button>
+</div>
+</div>
+</section>
+
+<section class="view" id="v-products">
+<div class="form">
+<label>Name<input id="pName"></label>
+<label>Category<input id="pCat" list="catList" placeholder="e.g. Coffee"></label>
+<datalist id="catList"></datalist>
+<label>Price<input id="pPrice" type="number" min="0" step="any"></label>
+<label>Stock (leave blank to skip tracking)<input id="pStock" type="number" min="0" step="1"></label>
+<div class="row" style="margin:0"><button class="pri" id="pSave">Add product</button><button id="pCancel" style="display:none">Cancel</button></div>
+</div>
+<div class="wrap"><table class="tbl"><thead><tr><th>Name</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th></th></tr></thead><tbody id="pBody"></tbody></table></div>
+</section>
+
+<section class="view" id="v-sales">
+<div class="bar">
+<label>Date<input type="date" id="sDate"></label>
+<button id="csv">Export CSV</button>
+</div>
+<div class="stats" id="stats"></div>
+<div class="wrap"><table class="tbl"><thead><tr><th>Order</th><th>Time</th><th>Items</th><th>Method</th><th class="r">Total</th><th></th></tr></thead><tbody id="sBody"></tbody></table></div>
+</section>
+
+<section class="view" id="v-settings">
+<div class="form">
+<label>Store name<input id="sName"></label>
+<label>Address / contact line<input id="sAddr"></label>
+<label>Currency symbol<input id="sCur" maxlength="4"></label>
+<label>Tax rate (%)<input id="sTax" type="number" min="0" step="any"></label>
+<label>Receipt footer<input id="sFoot"></label>
+<label>Receipt width<select id="sW"><option value="72">80mm paper</option><option value="48">58mm paper</option></select></label>
+<label>After payment<select id="sAuto"><option value="1">Print receipt automatically</option><option value="0">Do not print automatically</option></select></label>
+<button class="pri" id="sSave">Save settings</button>
+</div>
+<div class="form">
+<button id="bk">Download backup</button>
+<label>Restore backup<input type="file" id="rs" accept=".json"></label>
+<button class="dng" id="rst">Erase all data</button>
+</div>
+</section>
+</main>
+<dialog id="pay">
+<div class="big num" id="pTotal"></div>
+<label>Payment method<select id="pMethod"><option>Cash</option><option>Card</option><option>GCash</option><option>Other</option></select></label>
+<div id="tendRow">
+<label style="margin-top:10px">Amount received<input id="pTend" type="number" min="0" step="any"></label>
+<div class="quick" id="quick"></div>
+</div>
+<div class="b num" id="pChange" style="font-size:17px;font-weight:600;min-height:24px"></div>
+<div class="row"><button id="pNo">Cancel</button><button class="pri" id="pOk">Complete sale</button></div>
+</dialog>
+<div id="receipt"></div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const r2=n=>Math.round((n+Number.EPSILON)*100)/100;
+const uid=()=>"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const KEY="pos_v1";
+const sample=[["Americano","Coffee",90,null],["Cafe Latte","Coffee",120,null],["Cappuccino","Coffee",120,null],["Iced Mocha","Coffee",140,null],["Croissant","Pastry",85,24],["Blueberry Muffin","Pastry",75,24],["Club Sandwich","Food",150,null],["Bottled Water","Drinks",30,48]];
+const mk=()=>({settings:{name:"My Store",addr:"Your address / phone here",cur:"₱",tax:0,foot:"Thank you! Please come again.",w:"72",auto:"1"},seq:1,products:sample.map(([name,cat,price,stock])=>({id:uid(),name,cat,price,stock})),sales:[]});
+let db=null;
+try{db=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!db||!db.settings)db=mk();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast("Could not save: browser storage is full or blocked")}}
+const money=n=>db.settings.cur+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+let cart=[],dc={t:"%",v:0},cat="All",editId=null,lastSale=null;
+function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display="none",2600)}
+
+function calc(){
+const sub=r2(cart.reduce((a,c)=>a+c.price*c.qty,0));
+let d=dc.t==="%"?sub*(Math.min(+dc.v||0,100)/100):Math.min(+dc.v||0,sub);d=r2(d);
+const tax=r2((sub-d)*(+db.settings.tax||0)/100);
+return{sub,disc:d,tax,total:r2(sub-d+tax)};
+}
+function show(v){$$("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));$$(".view").forEach(s=>s.classList.toggle("on",s.id==="v-"+v));if(v==="sell")$("#q").focus();renderAll()}
+$("#nav").onclick=e=>{if(e.target.dataset.v)show(e.target.dataset.v)};
+
+function cats(){return["All",...new Set(db.products.map(p=>p.cat).filter(Boolean))]}
+function shown(){const q=$("#q").value.trim().toLowerCase();return db.products.filter(p=>(cat==="All"||p.cat===cat)&&(!q||p.name.toLowerCase().includes(q)))}
+function renderSell(){
+if(!cats().includes(cat))cat="All";
+$("#cats").innerHTML=cats().map(c=>`<button class="${c===cat?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+$("#grid").innerHTML=shown().map(p=>{const out=p.stock!=null&&p.stock<=0;return`<button class="item" data-id="${p.id}" ${out?"disabled":""}><b>${esc(p.name)}</b><span><span class="pr num">${money(p.price)}</span><br><small>${out?"Out of stock":p.stock!=null?p.stock+" left":esc(p.cat||"")}</small></span></button>`}).join("")||`<div class="empty">No items found. Add products in the Products tab.</div>`;
+renderCart();
+}
+$("#cats").onclick=e=>{if(e.target.dataset.c){cat=e.target.dataset.c;renderSell()}};
+$("#grid").onclick=e=>{const b=e.target.closest(".item");if(b)add(b.dataset.id)};
+$("#q").oninput=renderSell;
+$("#q").onkeydown=e=>{if(e.key==="Enter"){const p=shown().find(p=>p.stock==null||p.stock>0);if(p){add(p.id);e.target.value="";renderSell()}}};
+function add(id){
+const p=db.products.find(x=>x.id===id);if(!p)return;
+let l=cart.find(c=>c.id===id);
+if(p.stock!=null&&(l?l.qty:0)+1>p.stock){toast("Only "+p.stock+" in stock");return}
+if(l)l.qty++;else cart.push({id,name:p.name,price:p.price,qty:1});
+renderCart();
+}
+function renderCart(){
+$("#lines").innerHTML=cart.length?cart.map(c=>`<div class="line"><div><b>${esc(c.name)}</b><br><small class="num" style="color:var(--mut)">${money(c.price)} each</small></div><div class="q"><button data-a="-" data-id="${c.id}">−</button><span class="num">${c.qty}</span><button data-a="+" data-id="${c.id}">+</button></div><b class="num">${money(c.price*c.qty)}</b></div>`).join(""):`<div class="empty">Tap an item to start an order.</div>`;
+const t=calc();
+$("#tSub").textContent=money(t.sub);$("#tDisc").textContent="−"+money(t.disc);$("#tTax").textContent=money(t.tax);
+$("#tTaxL").textContent="Tax ("+(+db.settings.tax||0)+"%)";$("#tTot").textContent=money(t.total);
+$("#charge").disabled=!cart.length;$("#charge").textContent=cart.length?"Charge "+money(t.total):"Charge";
+}
+$("#lines").onclick=e=>{const b=e.target.closest("button");if(!b)return;const l=cart.find(c=>c.id===b.dataset.id);if(!l)return;
+if(b.dataset.a==="+"){add(l.id);return}
+l.qty--;if(l.qty<=0)cart=cart.filter(c=>c!==l);renderCart()};
+$("#clr").onclick=()=>{cart=[];dc.v=0;$("#dcV").value="";renderCart()};
+$("#dcT").onchange=()=>{dc.t=$("#dcT").value;renderCart()};
+$("#dcV").oninput=()=>{dc.v=$("#dcV").value;renderCart()};
+
+// Payment
+$("#charge").onclick=()=>{if(!cart.length)return;$("#pTotal").textContent=money(calc().total);$("#pMethod").value="Cash";$("#pTend").value="";payCalc();$("#pay").showModal();$("#pTend").focus()};
+function payCalc(){
+const t=calc(),cash=$("#pMethod").value==="Cash";$("#tendRow").style.display=cash?"":"none";
+const tend=cash?+$("#pTend").value||0:t.total,ch=r2(tend-t.total);
+$("#pChange").textContent=cash&&tend>0?(ch>=0?"Change: "+money(ch):"Short by "+money(-ch)):"";
+$("#pOk").disabled=cash&&tend<t.total;
+const opts=[t.total,...[50,100,500,1000,2000].filter(v=>v>=t.total)].slice(0,5);
+$("#quick").innerHTML=[...new Set(opts)].map(v=>`<button data-v="${v}">${v===t.total?"Exact":money(v)}</button>`).join("");
+}
+$("#quick").onclick=e=>{if(e.target.dataset.v){$("#pTend").value=e.target.dataset.v;payCalc()}};
+$("#pTend").oninput=payCalc;$("#pMethod").onchange=payCalc;
+$("#pTend").onkeydown=e=>{if(e.key==="Enter"&&!$("#pOk").disabled)complete()};
+$("#pNo").onclick=()=>$("#pay").close();
+$("#pOk").onclick=complete;
+function complete(){
+const t=calc(),m=$("#pMethod").value,paid=m==="Cash"?+$("#pTend").value:t.total;
+if(paid<t.total)return;
+const s={no:db.seq++,ts:Date.now(),items:cart.map(c=>({...c})),...t,method:m,paid,change:r2(paid-t.total)};
+s.items.forEach(i=>{const p=db.products.find(x=>x.id===i.id);if(p&&p.stock!=null)p.stock=Math.max(0,p.stock-i.qty)});
+db.sales.push(s);save();lastSale=s;
+cart=[];dc.v=0;$("#dcV").value="";$("#pay").close();
+toast("Sale "+pad(s.no)+" complete"+(m==="Cash"&&s.change>0?". Change "+money(s.change):""));
+renderAll();
+if(db.settings.auto==="1")printSale(s);
+}
+const pad=n=>"#"+String(n).padStart(5,"0");
+
+// Receipt
+function printSale(s){
+const st=db.settings,d=new Date(s.ts);
+const row=(a,b,c="")=>`<div class="f ${c}"><span>${a}</span><span>${b}</span></div>`;
+$("#receipt").style.width=st.w+"mm";
+$("#receipt").innerHTML=`<div class="c b" style="font-size:15px">${esc(st.name)}</div><div class="c">${esc(st.addr)}</div><div class="hr"></div>
+${row("Order "+pad(s.no),d.toLocaleDateString())}${row("",d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}))}<div class="hr"></div>
+${s.items.map(i=>`<div>${esc(i.name)}</div>${row("&nbsp;&nbsp;"+i.qty+" x "+money(i.price),money(i.qty*i.price))}`).join("")}<div class="hr"></div>
+${row("Subtotal",money(s.sub))}${s.disc?row("Discount","−"+money(s.disc)):""}${s.tax?row("Tax",money(s.tax)):""}
+${row("TOTAL",money(s.total),"t")}<div class="hr"></div>
+${row(esc(s.method),money(s.paid))}${s.method==="Cash"?row("Change",money(s.change)):""}<div class="hr"></div>
+<div class="c">${esc(st.foot)}</div>`;
+setTimeout(()=>window.print(),80);
+}
+$("#reprintLast").onclick=()=>{const s=lastSale||db.sales[db.sales.length-1];s?printSale(s):toast("No sales yet")};
+
+// Products
+function renderProducts(){
+$("#catList").innerHTML=cats().filter(c=>c!=="All").map(c=>`<option value="${esc(c)}">`).join("");
+$("#pBody").innerHTML=db.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.cat||"")}</td><td class="r num">${money(p.price)}</td><td class="r num">${p.stock==null?"Not tracked":p.stock}</td><td class="r"><button data-e="${p.id}">Edit</button> <button class="dng" data-d="${p.id}">Delete</button></td></tr>`).join("")||`<tr><td colspan="5" class="empty">No products yet. Add your first one above.</td></tr>`;
+}
+$("#pSave").onclick=()=>{
+const name=$("#pName").value.trim(),price=parseFloat($("#pPrice").value);
+if(!name||isNaN(price)||price<0){toast("Enter a name and a valid price");return}
+const sv=$("#pStock").value.trim(),o={name,cat:$("#pCat").value.trim(),price:r2(price),stock:sv===""?null:Math.max(0,parseInt(sv))};
+if(editId){Object.assign(db.products.find(p=>p.id===editId),o)}else db.products.push({id:uid(),...o});
+save();resetForm();renderAll();
+};
+function resetForm(){editId=null;["#pName","#pCat","#pPrice","#pStock"].forEach(s=>$(s).value="");$("#pSave").textContent="Add product";$("#pCancel").style.display="none"}
+$("#pCancel").onclick=resetForm;
+$("#pBody").onclick=e=>{
+const b=e.target.closest("button");if(!b)return;
+if(b.dataset.e){const p=db.products.find(x=>x.id===b.dataset.e);editId=p.id;$("#pName").value=p.name;$("#pCat").value=p.cat||"";$("#pPrice").value=p.price;$("#pStock").value=p.stock==null?"":p.stock;$("#pSave").textContent="Save changes";$("#pCancel").style.display="";$("#pName").focus()}
+if(b.dataset.d&&confirm("Delete this product? Past sales are not affected.")){db.products=db.products.filter(p=>p.id!==b.dataset.d);cart=cart.filter(c=>c.id!==b.dataset.d);save();renderAll()}
+};
+
+// Sales
+const day=t=>new Date(t).toLocaleDateString("en-CA");
+function daySales(){return db.sales.filter(s=>day(s.ts)===$("#sDate").value)}
+function renderSales(){
+if(!$("#sDate").value)$("#sDate").value=day(Date.now());
+const L=daySales(),tot=L.reduce((a,s)=>a+s.total,0),by={};L.forEach(s=>by[s.method]=(by[s.method]||0)+s.total);
+const units=L.reduce((a,s)=>a+s.items.reduce((x,i)=>x+i.qty,0),0);
+$("#stats").innerHTML=`<div class="stat"><span>Total sales</span><b class="num">${money(tot)}</b></div><div class="stat"><span>Orders</span><b>${L.length}</b></div><div class="stat"><span>Items sold</span><b>${units}</b></div><div class="stat"><span>Average order</span><b class="num">${money(L.length?tot/L.length:0)}</b></div>`+Object.entries(by).map(([k,v])=>`<div class="stat"><span>${esc(k)}</span><b class="num">${money(v)}</b></div>`).join("");
+$("#sBody").innerHTML=L.slice().reverse().map(s=>`<tr><td>${pad(s.no)}</td><td>${new Date(s.ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</td><td>${esc(s.items.map(i=>i.qty+" x "+i.name).join(", "))}</td><td>${esc(s.method)}</td><td class="r num">${money(s.total)}</td><td class="r"><button data-p="${s.no}">Reprint</button> <button class="dng" data-v="${s.no}">Void</button></td></tr>`).join("")||`<tr><td colspan="6" class="empty">No sales on this date.</td></tr>`;
+}
+$("#sDate").onchange=renderSales;
+$("#sBody").onclick=e=>{
+const b=e.target.closest("button");if(!b)return;
+if(b.dataset.p)printSale(db.sales.find(s=>s.no==b.dataset.p));
+if(b.dataset.v){const s=db.sales.find(s=>s.no==b.dataset.v);if(confirm("Void order "+pad(s.no)+"? Stock will be restored.")){s.items.forEach(i=>{const p=db.products.find(x=>x.id===i.id);if(p&&p.stock!=null)p.stock+=i.qty});db.sales=db.sales.filter(x=>x!==s);save();renderAll()}}
+};
+function dl(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+$("#csv").onclick=()=>{
+const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+const rows=[["Order","Date","Time","Items","Subtotal","Discount","Tax","Total","Method"],...daySales().map(s=>[pad(s.no),day(s.ts),new Date(s.ts).toLocaleTimeString(),s.items.map(i=>i.qty+" x "+i.name).join("; "),s.sub,s.disc,s.tax,s.total,s.method])];
+dl("sales-"+$("#sDate").value+".csv",rows.map(r=>r.map(q).join(",")).join("\n"),"text/csv");
+};
+
+// Settings
+function fillSettings(){const s=db.settings;$("#sName").value=s.name;$("#sAddr").value=s.addr;$("#sCur").value=s.cur;$("#sTax").value=s.tax;$("#sFoot").value=s.foot;$("#sW").value=s.w;$("#sAuto").value=s.auto}
+$("#sSave").onclick=()=>{
+db.settings={name:$("#sName").value.trim()||"My Store",addr:$("#sAddr").value.trim(),cur:$("#sCur").value||"₱",tax:Math.max(0,+$("#sTax").value||0),foot:$("#sFoot").value.trim(),w:$("#sW").value,auto:$("#sAuto").value};
+save();renderAll();toast("Settings saved");
+};
+$("#bk").onclick=()=>dl("pos-backup-"+day(Date.now())+".json",JSON.stringify(db),"application/json");
+$("#rs").onchange=e=>{
+const f=e.target.files[0];if(!f)return;
+f.text().then(t=>{const d=JSON.parse(t);if(!d.settings||!d.products||!d.sales)throw 0;if(confirm("Replace all current data with this backup?")){db=d;save();cart=[];renderAll();fillSettings();toast("Backup restored")}}).catch(()=>toast("That file is not a valid backup"));
+e.target.value="";
+};
+$("#rst").onclick=()=>{if(confirm("Erase all products, sales and settings? This cannot be undone.")){db=mk();save();cart=[];renderAll();fillSettings()}};
+
+function renderAll(){
+$("#hName").textContent=db.settings.name;document.title=db.settings.name+" POS";
+renderSell();renderProducts();renderSales();
+}
+fillSettings();renderAll();$("#q").focus();
+if("serviceWorker"in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
